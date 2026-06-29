@@ -1,0 +1,60 @@
+name: 📖 Backup Automático do Dicionário
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'dictionary/**'
+  schedule:
+    - cron: '0 3 * * *'  # Todo dia às 3h da manhã
+  workflow_dispatch:       # Permite rodar manualmente
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Gerar backup consolidado
+        run: |
+          mkdir -p backups
+          DATE=$(date +%Y-%m-%d)
+          python3 - <<'EOF'
+          import json
+          import os
+          from datetime import date
+
+          dicionario_completo = {}
+          pasta = "dictionary"
+
+          for arquivo in sorted(os.listdir(pasta)):
+              if arquivo.endswith(".json"):
+                  par = arquivo.replace(".json", "")
+                  with open(f"{pasta}/{arquivo}", "r", encoding="utf-8") as f:
+                      dados = json.load(f)
+                  dicionario_completo[par] = dados
+                  print(f"  {par}: {len(dados)} entradas")
+
+          total = sum(len(v) for v in dicionario_completo.values())
+          saida = {
+              "data": str(date.today()),
+              "total_traducoes": total,
+              "pares_de_idiomas": list(dicionario_completo.keys()),
+              "dicionario": dicionario_completo
+          }
+
+          nome = f"backups/backup_{date.today()}.json"
+          with open(nome, "w", encoding="utf-8") as f:
+              json.dump(saida, f, ensure_ascii=False, indent=2)
+
+          print(f"\n✅ Backup gerado: {nome} ({total} traduções no total)")
+          EOF
+
+      - name: Commit e push do backup
+        run: |
+          git config user.name "Campfire Bot"
+          git config user.email "campfire-bot@noreply.github.com"
+          git add backups/
+          git diff --cached --quiet || git commit -m "📖 Backup automático $(date +%Y-%m-%d)"
+          git push
