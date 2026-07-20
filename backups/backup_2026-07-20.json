@@ -1,0 +1,14 @@
+{
+  "data": "2026-07-20",
+  "total_traducoes": 3,
+  "pares_de_idiomas": [
+    "en-ptbr"
+  ],
+  "dicionario": {
+    "en-ptbr": {
+      "Hey, what's up?": "E aí, beleza?",
+      "How are you doing today?": "Como você tá hoje?",
+      "Wassuppp!": "E aíííí!"
+    }
+  }
+}
